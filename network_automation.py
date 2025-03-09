@@ -6,10 +6,10 @@ import re
 # Constants
 
 COMMANDS = [
-    'terminal length 0', 'show ver', 'show running-config', 'show int des',
+    'terminal length 0', 'show ver', 'show run', 'show int des',
     'show ip int brief', 'show cdp neighbors', 'show lldp neighbors',
     'show vlan', 'show mac address-table', 'show switch', 'show ip arp',
-    'show log', 'show clock'
+    'show clock', 'show log'
 ]
 
 # Functions
@@ -38,16 +38,17 @@ def parse_interface_description(output, hostname, ip_address):
     return results
 
 # Function to get the command outputs in a text file post login to the switch
-def get_device_output(ip, username, password):
+def get_device_output(ip, hostname, username, password, secret_password):
     device = {
         'device_type': 'cisco_ios',
         'host': ip,
         'username': username,
         'password': password,
+        'secret': secret_password
     }
     try:
         connection = ConnectHandler(**device)
-        hostname = connection.send_command('show run | include hostname').strip().split()[-1]
+        connection.enable()
         with open(f"{hostname}.txt", 'w') as file:
             for command in COMMANDS:
                 output = connection.send_command(command)
@@ -107,15 +108,18 @@ def main():
         print(f"Error reading Excel file {input_file}: {e}")
         return
 
-    select_program = input("Enter number of the program you want to run:\n1 - Switchport status\n2 - Device backup")
+    select_program = input("Enter number of the program you want to run:\n1 - Switchport status\n2 - Device backup\n")
     username = input("Enter the username: ")
     password = getpass.getpass("Enter the password: ")
+    secret_password = getpass.getpass("Enter the secret password")
 
     if select_program == '1':
         handle_switchport_status(df_switches, username, password)
     elif select_program == '2':
-        for ip in df_switches['ip']:
-            get_device_output(ip, username, password)
+        for idx, row in df_switches.iterrows():
+            hostname = row['hostname']
+            ip_address = row['ip']
+            get_device_output(ip_address, hostname, username, password, secret_password)
     else:
         print("Unknown program")
 
