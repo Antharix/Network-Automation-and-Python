@@ -101,7 +101,7 @@ def handle_switchport_status(df_switches, username, password):
 
 # Main function
 def main():
-    input_file = "switches.xlsx"
+    input_file = "devices.xlsx"
     try:
         df_switches = pd.read_excel(input_file)
     except Exception as e:
