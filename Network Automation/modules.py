@@ -1,9 +1,6 @@
 import pandas as pd
 from netmiko import ConnectHandler
-import getpass
 import re
-
-# Constants
 
 COMMANDS = [
     'terminal length 0', 'show ver', 'show run', 'show int des',
@@ -12,9 +9,6 @@ COMMANDS = [
     'show clock', 'show log'
 ]
 
-# Functions
-
-# Function to parse interface description after login to a switch
 def parse_interface_description(output, hostname, ip_address):
     results = []
     lines = output.splitlines()
@@ -37,8 +31,7 @@ def parse_interface_description(output, hostname, ip_address):
             print(f"Error on line: {line}")
     return results
 
-# Function to get the command outputs in a text file post login to the switch
-def get_device_output(ip, hostname, username, password, secret_password):
+def get_device_output(ip, hostname, username, password, secret_password, commands):
     device = {
         'device_type': 'cisco_ios',
         'host': ip,
@@ -50,7 +43,7 @@ def get_device_output(ip, hostname, username, password, secret_password):
         connection = ConnectHandler(**device)
         connection.enable()
         with open(f"{hostname}.txt", 'w') as file:
-            for command in COMMANDS:
+            for command in commands:
                 output = connection.send_command(command)
                 file.write(f"\n\n{command}\n{'='*len(command)}\n{output}")
         connection.disconnect()
@@ -58,7 +51,6 @@ def get_device_output(ip, hostname, username, password, secret_password):
     except Exception as e:
         print(f"Failed to connect to {ip}: {e}")
 
-# Function to handle switchport status
 def handle_switchport_status(df_switches, username, password):
     results = []
     for idx, row in df_switches.iterrows():
@@ -98,30 +90,3 @@ def handle_switchport_status(df_switches, username, password):
             print(f"Error writing results to Excel: {e}")
     else:
         print("No results to write.")
-
-# Main function
-def main():
-    input_file = "devices.xlsx"
-    try:
-        df_switches = pd.read_excel(input_file)
-    except Exception as e:
-        print(f"Error reading Excel file {input_file}: {e}")
-        return
-
-    select_program = input("Enter number of the program you want to run:\n1 - Switchport status\n2 - Device backup\n")
-    username = input("Enter the username: ")
-    password = getpass.getpass("Enter the password: ")
-    secret_password = getpass.getpass("Enter the secret password")
-
-    if select_program == '1':
-        handle_switchport_status(df_switches, username, password)
-    elif select_program == '2':
-        for idx, row in df_switches.iterrows():
-            hostname = row['hostname']
-            ip_address = row['ip']
-            get_device_output(ip_address, hostname, username, password, secret_password)
-    else:
-        print("Unknown program")
-
-if __name__ == '__main__':
-    main()
