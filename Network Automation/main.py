@@ -1,6 +1,6 @@
 import pandas as pd
 import getpass
-from modules import get_device_output, handle_switchport_status, COMMANDS
+from modules import get_device_output, handle_switchport_status, update_interface_description_and_shutdown, COMMANDS
 
 def main():
     input_file = "devices.xlsx"
@@ -10,7 +10,7 @@ def main():
         print(f"Error reading Excel file {input_file}: {e}")
         return
 
-    select_program = input("Enter number of the program you want to run:\n1 - Switchport status\n2 - Device backup\n")
+    select_program = input("Enter number of the program you want to run:\n1 - Switchport status\n2 - Device backup\n3 - Update interface description and shutdown\n")
     username = input("Enter the username: ")
     password = getpass.getpass("Enter the password: ")
     secret_password = getpass.getpass("Enter the secret password")
@@ -29,6 +29,13 @@ def main():
             hostname = row['hostname']
             ip_address = row['ip']
             get_device_output(ip_address, hostname, username, password, secret_password, commands)
+    elif select_program == '3':
+        interface_file = input("Enter the Excel file name with interface details: ")
+        try:
+            df_interfaces = pd.read_excel(interface_file)
+            update_interface_description_and_shutdown(df_interfaces, username, password)
+        except Exception as e:
+            print(f"Error reading Excel file {interface_file}: {e}")
     else:
         print("Unknown program")
 

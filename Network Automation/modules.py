@@ -90,3 +90,31 @@ def handle_switchport_status(df_switches, username, password):
             print(f"Error writing results to Excel: {e}")
     else:
         print("No results to write.")
+
+def update_interface_description_and_shutdown(df_interfaces, username, password):
+    for idx, row in df_interfaces.iterrows():
+        hostname = row['hostname']
+        ip_address = row['ip']
+        interface = row['interface']
+        description = row['description']
+        print(f"\nConnecting to {hostname} ({ip_address}) to update {interface}...")
+
+        device = {
+            'device_type': 'cisco_ios',
+            'ip': ip_address,
+            'username': username,
+            'password': password,
+        }
+        try:
+            net_connect = ConnectHandler(**device)
+            net_connect.enable()
+            config_commands = [
+                f"interface {interface}",
+                f"description {description}",
+                "shutdown"
+            ]
+            net_connect.send_config_set(config_commands)
+            net_connect.disconnect()
+            print(f"Successfully updated {interface} on {hostname}.")
+        except Exception as e:
+            print(f"Failed to connect to {hostname} ({ip_address}): {e}")
